@@ -34,7 +34,7 @@ public class ControlServer {
  */
 class PoleServer_handler implements Runnable {
     // Set the number of poles
-    private static final int NUM_POLES = 1;
+    private static final int NUM_POLES = 2;
 
     static ServerSocket providerSocket;
     Socket connection = null;
@@ -61,6 +61,13 @@ class PoleServer_handler implements Runnable {
         t.start();
     }
     double angle, angleDot, pos, posDot, action = 0, i = 0;
+
+    //Data used for part three
+    int current_pole = 0;
+    double last_angle = 0;
+    double last_angleDot = 0;
+    double last_pos = 0;
+    double last_posDot = 0;
 
     /**
      * This method receives the pole positions and calculates the updated value
@@ -104,6 +111,13 @@ class PoleServer_handler implements Runnable {
 
                   System.out.println("server < pole["+i+"]: "+angle+"  "
                       +angleDot+"  "+pos+"  "+posDot);
+                    current_pole = i;
+                    if(current_pole == 0){
+                        last_angle = angle;
+                        last_angleDot = angleDot;
+                        last_pos = pos;
+                        last_posDot = posDot;
+                    }
                   actions[i] = calculate_action(angle, angleDot, pos, posDot);
                 }
 
@@ -148,7 +162,7 @@ class PoleServer_handler implements Runnable {
     }
 
     double output = 0;
-    int target_position = 2;
+    double target_position = 0;
 
     int p_gain = 2;
     int d_gain = 1;
@@ -164,6 +178,13 @@ class PoleServer_handler implements Runnable {
     // pendulum needs sensing data from other pendulums.
     double calculate_action(double angle, double angleDot, double pos, double posDot) {
 
+        if(current_pole == 1){
+            target_position = last_pos - 1;
+        }else{
+            target_position = 2;
+        }
+
+        System.out.println(current_pole + " wants to go to " + target_position);
         //Figure out how far we are from the target
         double separation = target_position - pos;
 
