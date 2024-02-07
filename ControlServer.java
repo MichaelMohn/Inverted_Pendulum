@@ -147,58 +147,65 @@ class PoleServer_handler implements Runnable {
 
     }
 
+    double output = 0;
+    int target_position = 2;
+
+    int p_gain = 2;
+    int d_gain = 1;
+
+    double p_gain_trans = .1;
+
+    double angle_offset_constant = .05;
+
     // Calculate the actions to be applied to the inverted pendulum from the
     // sensing data.
     // TODO: Current implementation assumes that each pole is controlled
     // independently. The interface needs to be changed if the control of one
     // pendulum needs sensing data from other pendulums.
     double calculate_action(double angle, double angleDot, double pos, double posDot) {
-      double action = 0;
-       // if (angle > 0 && angleDiff < 0) {
-       if (angle > 0) {
-           if (angle > 65 * 0.01745) {
-               action = 10;
-           } else if (angle > 60 * 0.01745) {
-               action = 8;
-           } else if (angle > 50 * 0.01745) {
-               action = 7.5;
-           } else if (angle > 30 * 0.01745) {
-               action = 4;
-           } else if (angle > 20 * 0.01745) {
-               action = 2;
-           } else if (angle > 10 * 0.01745) {
-               action = 0.5;
-           } else if(angle >5*0.01745){
-               action = 0.2;
-           } else if(angle >2*0.01745){
-               action = 0.1;
-           } else {
-               action = 0;
-           }
-       } else if (angle < 0) {
-           if (angle < -65 * 0.01745) {
-               action = -10;
-           } else if (angle < -60 * 0.01745) {
-               action = -8;
-           } else if (angle < -50 * 0.01745) {
-               action = -7.5;
-           } else if (angle < -30 * 0.01745) {
-               action = -4;
-           } else if (angle < -20 * 0.01745) {
-               action = -2;
-           } else if (angle < -10 * 0.01745) {
-               action = -0.5;
-           } else if(angle <-5*0.01745){
-               action = -0.2;
-           } else if(angle <-2*0.01745){
-               action = -0.1;
-           } else {
-               action = 0;
-           }
-       } else {
-           action = 0.;
-       }
-       return action;
+
+        //Figure out how far we are from the target
+        double separation = target_position - pos;
+
+        //The angle offset (how far we want the pendulum tilted) is proportional to separation
+        double target_angle = separation * angle_offset_constant;
+        target_angle = target_angle - (posDot*.1);
+        
+        if(target_angle > .2){
+            target_angle = .2;
+        }else if(target_angle < -.2){
+            target_angle = -.2;
+        }
+
+        double trans_output = 0;
+        // //Don't worry about translation if we are tipping the wrong way
+        // if((separation > 0 && angle < 0) || (separation < 0 && angle > 0)){
+        //     trans_output = 0;
+        // }else{
+        //     //Figure out how much translation output we want
+        //     trans_output = separation * p_gain_trans;
+        // }
+        
+
+         
+        double angle_error = angle - target_angle;
+        System.out.println("Target Angle:  " + target_angle);
+
+        double rot_output = angle_error * p_gain;
+        //double rot_output = angle * p_gain;
+        output = trans_output + rot_output;
+
+        if(output > 0 && angleDot < -.4){
+            System.out.println("\n\n\n----------------SLOWING------------------\n\n\n");
+            output = 0;
+        }else if(output < 0 && angleDot > .4){
+            System.out.println("\n\n\n----------------SLOWING------------------\n\n\n");
+            output = 0;
+        }
+
+
+
+        return output;
    }
 
     /**
