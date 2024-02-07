@@ -171,10 +171,10 @@ class PoleServer_handler implements Runnable {
         double target_angle = separation * angle_offset_constant;
         target_angle = target_angle - (posDot*.1);
         
-        if(target_angle > .2){
-            target_angle = .2;
-        }else if(target_angle < -.2){
-            target_angle = -.2;
+        if(target_angle > .23){
+            target_angle = .23;
+        }else if(target_angle < -.23){
+            target_angle = -.23;
         }
 
         double trans_output = 0;
