@@ -173,18 +173,15 @@ class PoleServer_handler implements Runnable {
 
     // Calculate the actions to be applied to the inverted pendulum from the
     // sensing data.
-    // TODO: Current implementation assumes that each pole is controlled
-    // independently. The interface needs to be changed if the control of one
-    // pendulum needs sensing data from other pendulums.
     double calculate_action(double angle, double angleDot, double pos, double posDot) {
 
+        // This chunk of code is purely for task 3
         if(current_pole == 1){
             target_position = last_pos - 1;
         }else{
             target_position = 2;
         }
 
-        System.out.println(current_pole + " wants to go to " + target_position);
         //Figure out how far we are from the target
         double separation = target_position - pos;
 
@@ -192,39 +189,24 @@ class PoleServer_handler implements Runnable {
         double target_angle = separation * angle_offset_constant;
         target_angle = target_angle - (posDot*.1);
         
+        //We never want to tip too far
         if(target_angle > .23){
             target_angle = .23;
         }else if(target_angle < -.23){
             target_angle = -.23;
         }
 
-        double trans_output = 0;
-        // //Don't worry about translation if we are tipping the wrong way
-        // if((separation > 0 && angle < 0) || (separation < 0 && angle > 0)){
-        //     trans_output = 0;
-        // }else{
-        //     //Figure out how much translation output we want
-        //     trans_output = separation * p_gain_trans;
-        // }
-        
 
-         
+        //Calculate output based on angle error 
         double angle_error = angle - target_angle;
-        System.out.println("Target Angle:  " + target_angle);
+        double output = angle_error * p_gain;
 
-        double rot_output = angle_error * p_gain;
-        //double rot_output = angle * p_gain;
-        output = trans_output + rot_output;
-
+        //Basic d_parameter mechanism
         if(output > 0 && angleDot < -.4){
-            System.out.println("\n\n\n----------------SLOWING------------------\n\n\n");
             output = 0;
         }else if(output < 0 && angleDot > .4){
-            System.out.println("\n\n\n----------------SLOWING------------------\n\n\n");
             output = 0;
         }
-
-
 
         return output;
    }
