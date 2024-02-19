@@ -164,50 +164,88 @@ class PoleServer_handler implements Runnable {
     double output = 0;
     double target_position = 0;
 
-    int p_gain = 2;
-    int d_gain = 1;
+    //THIS WAS TWO CHANGE IT
+    int p_gain = 10;
+    int d_gain = 2;
 
     double p_gain_trans = .1;
 
-    double angle_offset_constant = .05;
+    double angle_p_gain = .225;
+    double angle_d_gain = .225;
 
     // Calculate the actions to be applied to the inverted pendulum from the
     // sensing data.
     double calculate_action(double angle, double angleDot, double pos, double posDot) {
 
-        // This chunk of code is purely for task 3
-        if(current_pole == 1){
-            target_position = last_pos - 1;
-        }else{
-            target_position = 2;
-        }
+        // // This chunk of code is purely for task 3
+        // if(NUM_POLES > 1){
+        //     if(current_pole == 1){
+        //         //Set target position of follower pole, based on position and speed of guide pole
+        //         if(pos < last_pos){
+        //             target_position = last_pos - 1;
+        //         }else{
+        //             target_position = last_pos + (last_posDot * 2) + 1;
+        //         }
+        //     }else{
+        //         //Set target position of guide pole
+        //         target_position = 0;
+        //     }
+        // }
 
-        //Figure out how far we are from the target
-        double separation = target_position - pos;
+        // //Figure out how far we are from the target
+        // double separation = target_position - pos;
 
-        //The angle offset (how far we want the pendulum tilted) is proportional to separation
-        double target_angle = separation * angle_offset_constant;
-        target_angle = target_angle - (posDot*.1);
+        // //The angle offset (how far we want the pendulum tilted) is proportional to separation
+        // double target_angle = separation * angle_offset_constant;
+
+        // //Target angle is dampened based on velocity
+        // target_angle = target_angle - (posDot*.1);
         
-        //We never want to tip too far
-        if(target_angle > .23){
-            target_angle = .23;
-        }else if(target_angle < -.23){
-            target_angle = -.23;
+        // //We never want to tip too far
+        // if(target_angle > .23){
+        //     if((current_pole == 1) && last_posDot > 0){
+        //         System.out.println("Target Angle: " + target_angle);
+        //     }else{
+        //         target_angle = .23;
+        //     }
+        // }else if(target_angle < -.23){
+        //     target_angle = -.23;
+        // }
+
+
+        // //Calculate output based on angle error 
+        // double angle_error = angle - target_angle;
+        // double output = angle_error * p_gain;
+
+        // //Basic d_parameter mechanism
+        // if(output > 0 && angleDot < -.4){
+        //     output = 0;
+        // }else if(output < 0 && angleDot > .4){
+        //     output = 0;
+        // }
+
+        //When you come back, try to add an adjustment based off of velocities...
+        if(NUM_POLES > 1){
+            if(current_pole == 1){
+                //Set target position of follower pole, based on position of guide pole
+                if(pos < last_pos){
+                    target_position = last_pos - 1;
+                }else{
+                    target_position = last_pos  + 1;
+                }
+            }else{
+                //Set target position of guide pole
+                target_position = 0;
+            }
         }
 
-
-        //Calculate output based on angle error 
+        double separation = target_position - pos;
+        double target_angle = separation * angle_p_gain;
+        target_angle = target_angle - posDot * angle_d_gain;
         double angle_error = angle - target_angle;
-        double output = angle_error * p_gain;
 
-        //Basic d_parameter mechanism
-        if(output > 0 && angleDot < -.4){
-            output = 0;
-        }else if(output < 0 && angleDot > .4){
-            output = 0;
-        }
-
+        output = angle_error * p_gain;
+        output = output + (angleDot* d_gain);
         return output;
    }
 
