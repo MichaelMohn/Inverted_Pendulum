@@ -4,6 +4,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.lang.Math.*;
 
 public class ControlServer {
 
@@ -170,78 +171,47 @@ class PoleServer_handler implements Runnable {
 
     double p_gain_trans = .1;
 
-    double angle_p_gain = .225;
-    double angle_d_gain = .225;
+    double angle_p_gain = .2;
+    double angle_d_gain = .2;
 
     // Calculate the actions to be applied to the inverted pendulum from the
     // sensing data.
     double calculate_action(double angle, double angleDot, double pos, double posDot) {
 
-        // // This chunk of code is purely for task 3
-        // if(NUM_POLES > 1){
-        //     if(current_pole == 1){
-        //         //Set target position of follower pole, based on position and speed of guide pole
-        //         if(pos < last_pos){
-        //             target_position = last_pos - 1;
-        //         }else{
-        //             target_position = last_pos + (last_posDot * 2) + 1;
-        //         }
-        //     }else{
-        //         //Set target position of guide pole
-        //         target_position = 0;
-        //     }
-        // }
-
-        // //Figure out how far we are from the target
-        // double separation = target_position - pos;
-
-        // //The angle offset (how far we want the pendulum tilted) is proportional to separation
-        // double target_angle = separation * angle_offset_constant;
-
-        // //Target angle is dampened based on velocity
-        // target_angle = target_angle - (posDot*.1);
-        
-        // //We never want to tip too far
-        // if(target_angle > .23){
-        //     if((current_pole == 1) && last_posDot > 0){
-        //         System.out.println("Target Angle: " + target_angle);
-        //     }else{
-        //         target_angle = .23;
-        //     }
-        // }else if(target_angle < -.23){
-        //     target_angle = -.23;
-        // }
-
-
-        // //Calculate output based on angle error 
-        // double angle_error = angle - target_angle;
-        // double output = angle_error * p_gain;
-
-        // //Basic d_parameter mechanism
-        // if(output > 0 && angleDot < -.4){
-        //     output = 0;
-        // }else if(output < 0 && angleDot > .4){
-        //     output = 0;
-        // }
-
-        //When you come back, try to add an adjustment based off of velocities...
         if(NUM_POLES > 1){
             if(current_pole == 1){
                 //Set target position of follower pole, based on position of guide pole
                 if(pos < last_pos){
-                    target_position = last_pos - 1;
+                    target_position = last_pos - 1; 
+                    if(last_posDot < 0){
+                        target_position += last_posDot;
+                    }
                 }else{
-                    target_position = last_pos  + 1;
+                    target_position = last_pos + 1; 
+                    if(last_posDot > 0){
+                        target_position += last_posDot;
+                    }
                 }
             }else{
                 //Set target position of guide pole
-                target_position = 0;
+                target_position = 1;
             }
+        }else{
+            //Set target position of the follower pole (part 1 & 2)
+            target_position = 0;
         }
 
         double separation = target_position - pos;
         double target_angle = separation * angle_p_gain;
         target_angle = target_angle - posDot * angle_d_gain;
+
+        //Bound the target angle to 1. This prevents tipping regardless of seperation
+        if(target_angle > 1){
+            target_angle = 1;
+        }else if(target_angle < -1){
+            target_angle = -1;
+        }
+
         double angle_error = angle - target_angle;
 
         output = angle_error * p_gain;
